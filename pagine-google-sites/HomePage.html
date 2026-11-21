@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riviste Pedagogiche Italiane</title>
+  <!-- Sostituisci TUO-USERNAME con il tuo nome utente GitHub (es. gbonaiuti) -->
+  <link rel="stylesheet" href="https://gbonaiuti.github.io/riviste-pedagogiche/assets/stile.css" />
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Motivazione del progetto -->
+  <section class="intro-box">
+    <h2>Un servizio di ricerca per le riviste pedagogiche italiane</h2>
+    <p>
+      Nel panorama della ricerca educativa e didattica italiana mancava un aggregatore bibliografico nazionale paragonabile alle grandi banche dati internazionali come <em>ERIC</em>, <em>Scopus</em>, <em>PsycINFO</em> o <em>Web of Science</em>. Solo una parte delle oltre sessanta riviste scientifiche italiane dell'area pedagogica (settori concorsuali 11/PAED-01 e 11/PAED-02) risulta infatti indicizzata in questi sistemi.
+    </p>
+    <p>
+      Chi desiderava svolgere una rassegna della letteratura scientifica in lingua italiana si trovava costretto a consultare singolarmente i siti delle diverse testate. Questo servizio sperimentale si propone di colmare tale lacuna offrendo un punto d'accesso unico agli articoli pubblicati nelle riviste pedagogiche italiane di Classe A del <a href="https://www.anvur.it/it/ricerca/riviste/elenchi-di-riviste-classificate" target="_blank" rel="noopener noreferrer">catalogo ANVUR</a> attraverso tre diverse modalità di ricerca. Le prime due si avvalgono di <a href="https://openalex.org/" target="_blank" rel="noopener noreferrer"><em>OpenAlex</em></a>, infrastruttura aperta di dati catalografici; la terza sfrutta le potenzialità di <i>Google Programmable Search Engine</i>.
+    </p>
+  </section>
+
+  <!-- Titolo sezione e pulsanti rapidi -->
+  <div class="section-header-home">
+    <h2>Tre sistemi di ricerca complementari</h2>
+    <p>
+      Tutti i motori interrogano esclusivamente l'insieme delle riviste pedagogiche italiane di Classe A ANVUR per il settore censite nella pagina <strong>Elenco delle riviste</strong> di questo sito.
+    </p>
+  </div>
+
+  <!-- PULSANTI DI ACCESSO RAPIDO -->
+  <div class="quick-actions">
+    <a href="https://www.rivistepedagogiche.it/OpenAlex" target="_blank" rel="noopener noreferrer" class="action-btn">
+      <div>
+        <span class="btn-title">Ricerca per parole</span>
+        <span class="btn-subtext">Parole chiave, autore, anno e rivista</span>
+      </div>
+    </a>
+
+    <a href="https://www.rivistepedagogiche.it/RicercaSemantica" target="_blank" rel="noopener noreferrer" class="action-btn">
+      <div>
+        <span class="btn-title">Ricerca semantica AI</span>
+        <span class="btn-subtext">Per frasi, concetti e problemi educativi (IT/EN)</span>
+      </div>
+    </a>
+
+    <a href="https://www.rivistepedagogiche.it/GoogleSearch" target="_blank" rel="noopener noreferrer" class="action-btn">
+      <div>
+        <span class="btn-title">Ricerca con GoogleSearch</span>
+        <span class="btn-subtext">Ricerca web full-text su tutte le testate</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Box comparative -->
+  <div class="engines-grid">
+
+    <!-- Card 1: OpenAlex -->
+    <article class="engine-card recommended">
+      <span class="badge badge-primary">Ricerca Strutturata</span>
+      <h3>1. Ricerca bibliografica (OpenAlex)</h3>
+      <p class="engine-desc">
+        Interroga il catalogo scientifico aperto <strong>OpenAlex</strong> filtrando gli articoli tramite gli identificativi delle riviste selezionate.
+      </p>
+
+      <div class="feature-block">
+        <div class="feature-title pros">Punti di forza</div>
+        <ul class="feature-list pros">
+          <li>Restituisce elenchi completi e paginabili senza limiti di risultati.</li>
+          <li>Permette di filtrare per autore, singola rivista e intervallo di anni.</li>
+          <li>Ordina per rilevanza, data di pubblicazione o numero di citazioni.</li>
+          <li>Mostra gli abstract e segnala la disponibilità del PDF <em>Open Access</em>.</li>
+        </ul>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title cons">Limiti</div>
+        <ul class="feature-list cons">
+          <li>Copre integralmente le riviste che depositano metadati e codici DOI (quasi tutte le testate OJS), mentre non include le riviste prive di indicizzazione aperta.</li>
+        </ul>
+      </div>
+
+      <div class="nav-hint">
+        &rarr; <a href="https://www.rivistepedagogiche.it/OpenAlex" target="_blank" rel="noopener noreferrer">Apri Ricerca con OpenAlex</a>
+      </div>
+    </article>
+
+    <!-- Card 2: Ricerca Semantica AI -->
+    <article class="engine-card">
+      <span class="badge">Ricerca Concettuale</span>
+      <h3>2. Ricerca semantica AI (OpenAlex)</h3>
+      <p class="engine-desc">
+        Sfrutta il motore vettoriale di <strong>OpenAlex</strong> per individuare articoli affini al significato di una frase o di un tema educativo.
+      </p>
+
+      <div class="feature-block">
+        <div class="feature-title pros">Punti di forza</div>
+        <ul class="feature-list pros">
+          <li>Accetta domande e descrizioni articolate in linguaggio naturale.</li>
+          <li>Individua contributi pertinenti anche se usano sinonimi diversi o sono scritti in <strong>inglese</strong>.</li>
+          <li>Filtra per lingua, rivista, anni e disponibilità di <em>Open Access</em> o abstract.</li>
+        </ul>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title cons">Limiti</div>
+        <ul class="feature-list cons">
+          <li>Opera sullo stesso perimetro di riviste indicizzate su OpenAlex e dipende dalla disponibilità degli abstract depositati dagli editori.</li>
+        </ul>
+      </div>
+
+      <div class="nav-hint">
+        &rarr; <a href="https://www.rivistepedagogiche.it/RicercaSemantica" target="_blank" rel="noopener noreferrer">Apri Ricerca Semantica AI</a>
+      </div>
+    </article>
+
+    <!-- Card 3: Google Programmable Search -->
+    <article class="engine-card">
+      <span class="badge">Ricerca Web Estesa</span>
+      <h3>3. Ricerca web (GoogleSearch)</h3>
+      <p class="engine-desc">
+        Utilizza l'infrastruttura di <strong>Google</strong> restringendo l'indice ai domini web delle riviste pedagogiche censite.
+      </p>
+
+      <div class="feature-block">
+        <div class="feature-title pros">Punti di forza</div>
+        <ul class="feature-list pros">
+          <li>Esegue una ricerca a testo pieno (<em>full-text</em>) su tutte le pagine web pubblicamente indicizzate.</li>
+          <li>Indispensabile per esplorare le riviste non presenti su OpenAlex e i fascicoli più datati.</li>
+        </ul>
+      </div>
+
+      <div class="feature-block">
+        <div class="feature-title cons">Limiti</div>
+        <ul class="feature-list cons">
+          <li>Per vincolo della piattaforma Google, i risultati sono limitati alle prime 10 pagine (massimo 100 occorrenze).</li>
+          <li>Non consente filtri strutturati per anno, autore o singoli metadati bibliografici.</li>
+        </ul>
+      </div>
+
+      <div class="nav-hint">
+        &rarr; <a href="https://www.rivistepedagogiche.it/GoogleSearch" target="_blank" rel="noopener noreferrer">Apri Ricerca con GoogleSearch</a>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- Crediti e Informativa Privacy / Cookie comprimibile -->
+  <footer class="author-box">
+    <div class="footer-top">
+      <span>Sistema ideato e realizzato da Giovanni Bonaiuti, Università degli Studi di Cagliari, per quanti sono impegnati nella ricerca educativa. &copy; 2026</span>
+    </div>
+
+    <details class="privacy-details" id="privacyBox">
+      <summary>Informativa Privacy e Cookie (Reg. UE 2016/679 – GDPR)</summary>
+      <div class="privacy-content">
+        Questo portale ha esclusiva finalità scientifica e divulgativa, non raccoglie dati personali mediante moduli di registrazione e non utilizza cookie di profilazione o marketing. Il sito è ospitato su infrastruttura Google Sites e utilizza <em>Google Analytics 4</em> (con indirizzi IP anonimizzati) esclusivamente per rilevare statistiche aggregate e anonime sulle visite, oltre ai servizi esterni <em>OpenAlex</em> e <em>Google Programmable Search</em> per l'esecuzione delle ricerche bibliografiche. L'utente può disabilitare o cancellare i cookie in qualsiasi momento tramite le impostazioni del proprio browser o tramite il componente aggiuntivo ufficiale di opt-out di Google. Titolare del trattamento per le finalità del portale: Giovanni Bonaiuti (<span id="contactSlot">clicca sull'informativa per visualizzare il recapito</span>), cui è possibile rivolgersi per esercitare i diritti previsti dagli artt. 15–22 del GDPR.
+      </div>
+    </details>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    const privacyBox = document.getElementById("privacyBox");
+    const contactSlot = document.getElementById("contactSlot");
+    if (!privacyBox || !contactSlot) return;
+
+    privacyBox.addEventListener("toggle", function () {
+      if (privacyBox.open && !contactSlot.dataset.loaded) {
+        const u = ["giovanni", "bonaiuti"].join(".");
+        const d = ["unica", "it"].join(".");
+        const addr = u + "@" + d;
+        const link = document.createElement("a");
+        link.href = "mailto:" + addr;
+        link.textContent = addr;
+        contactSlot.textContent = "";
+        contactSlot.appendChild(link);
+        contactSlot.dataset.loaded = "1";
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

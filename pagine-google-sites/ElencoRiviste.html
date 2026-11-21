@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riviste Pedagogiche Italiane</title>
+  <!-- Sostituisci TUO-USERNAME con il tuo nome utente GitHub (es. gbonaiuti) -->
+  <link rel="stylesheet" href="https://gbonaiuti.github.io/riviste-pedagogiche/assets/stile.css" />
+  <script src="https://gbonaiuti.github.io/riviste-pedagogiche/assets/riviste.js"></script>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <section class="intro-box">
+    <h2 id="pageTitle">Elenco riviste scientifiche italiane di area pedagogica</h2>
+    <p id="pageDescription"></p>
+  </section>
+
+  <div class="filter-bar">
+    <input
+      type="text"
+      id="filterInput"
+      placeholder="Cerca per titolo della rivista o codice ISSN..."
+      aria-label="Filtra riviste"
+    />
+    <select id="statusFilter" aria-label="Filtra per indicizzazione">
+      <option value="ALL" id="optAll">Tutte le riviste</option>
+      <option value="OA" id="optOa">Indicizzate</option>
+      <option value="NO_OA" id="optNoOa">Non indicizzate</option>
+    </select>
+    <span class="counter-badge" id="journalCounter">0 riviste</span>
+  </div>
+
+  <div class="journals-grid" id="journalsGrid"></div>
+
+  <footer class="author-box">
+    <div class="footer-block">
+      <strong>Nota sulla copertura:</strong> Le riviste contrassegnate in verde (<em>Indicizzata</em>) sono presenti sia nel motore bibliografico <em>OpenAlex</em> sia nella ricerca web <em>Google</em>. Le riviste contrassegnate in ambra (<em>Non indicizzata</em>) non risultano attualmente presenti su <em>OpenAlex</em> (per assenza di metadati DOI depositati nei circuiti aperti) e sono ricercabili consultando direttamente il sito della rivista quando disponibile. Facendo clic su ciascun codice <strong>ISSN</strong> è possibile verificare la scheda ufficiale sul portale internazionale <em>ISSN Portal</em>.
+    </div>
+
+    <div class="footer-block">
+      <strong>Problemi nel reperimento articoli e aggiornamento dei dati:</strong> <a href="https://www.rivistepedagogiche.it/FAQ" target="_blank" rel="noopener noreferrer">vedi pagina FAQ</a>.
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    const CONFIG = window.ELENCO_PAGE_CONFIG || {};
+    const JOURNALS = window.PEDAGOGICAL_JOURNALS || [];
+
+    const pageTitle = document.getElementById("pageTitle");
+    const pageDescription = document.getElementById("pageDescription");
+    const optAll = document.getElementById("optAll");
+    const optOa = document.getElementById("optOa");
+    const optNoOa = document.getElementById("optNoOa");
+    const journalsGrid = document.getElementById("journalsGrid");
+    const filterInput = document.getElementById("filterInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const journalCounter = document.getElementById("journalCounter");
+
+    if (CONFIG.title) pageTitle.textContent = CONFIG.title;
+    if (CONFIG.description) pageDescription.innerHTML = CONFIG.description;
+
+    const isIndexed = (j) => Boolean(j.openAlexId && j.openAlexId.trim() !== "");
+
+    const sortedJournals = [...JOURNALS].sort((a, b) =>
+      a.name.localeCompare(b.name, "it")
+    );
+
+    const totalCount = sortedJournals.length;
+    const oaCount = sortedJournals.filter(isIndexed).length;
+    const noOaCount = totalCount - oaCount;
+
+    optAll.textContent = `Tutte le riviste (${totalCount})`;
+    optOa.textContent = `Indicizzate (${oaCount})`;
+    optNoOa.textContent = `Non indicizzate (${noOaCount})`;
+
+    function buildIssnPortalLink(code) {
+      const clean = escapeHtml(code);
+      return `<a href="https://portal.issn.org/resource/ISSN/${clean}" target="_blank" rel="noopener noreferrer" class="issn-link" title="Verifica ISSN ${clean} su ISSN Portal">${clean}</a>`;
+    }
+
+    function formatIssnHtml(j) {
+      const p1 = (j.issn || "").trim();
+      const p2 = (j.issn2 || "").trim();
+      if (p1 && p2) {
+        return `<span class="issn-group">ISSN: ${buildIssnPortalLink(p1)} / ${buildIssnPortalLink(p2)}</span>`;
+      }
+      if (p1) {
+        return `<span class="issn-group">ISSN: ${buildIssnPortalLink(p1)}</span>`;
+      }
+      if (p2) {
+        return `<span class="issn-group">ISSN: ${buildIssnPortalLink(p2)}</span>`;
+      }
+      return `<span class="issn-group">ISSN: N/D</span>`;
+    }
+
+    function renderJournals(list) {
+      journalsGrid.innerHTML = "";
+      journalCounter.textContent =
+        list.length === totalCount
+          ? `${list.length} riviste censite`
+          : `${list.length} di ${totalCount} riviste`;
+
+      if (list.length === 0) {
+        journalsGrid.innerHTML = `
+          <div class="empty-state">
+            Nessuna rivista corrisponde ai criteri di filtro selezionati.
+          </div>`;
+        return;
+      }
+
+      list.forEach(journal => {
+        const indexed = isIndexed(journal);
+        const card = document.createElement("article");
+        card.className = indexed
+          ? "journal-card"
+          : "journal-card not-in-openalex";
+
+        const badgeHtml = indexed
+          ? `<span class="status-pill status-oa">Indicizzata</span>`
+          : `<span class="status-pill status-no-oa">Non indicizzata</span>`;
+
+        const hasUrl = journal.url && journal.url.trim() !== "";
+        const safeUrl = hasUrl ? escapeHtml(journal.url.trim()) : "";
+
+        const titleHtml = hasUrl
+          ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(journal.name)}</a>`
+          : `<span>${escapeHtml(journal.name)}</span>`;
+
+        const actionHtml = hasUrl
+          ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="site-link">Vai alla rivista &nearr;</a>`
+          : `<span class="no-link-label">Sito non disponibile</span>`;
+
+        card.innerHTML = `
+          <div class="card-top">
+            ${badgeHtml}
+            <div class="journal-title">${titleHtml}</div>
+          </div>
+          <div class="journal-footer">
+            ${formatIssnHtml(journal)}
+            ${actionHtml}
+          </div>
+        `;
+
+        journalsGrid.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      const term = filterInput.value.trim().toLowerCase();
+      const status = statusFilter.value;
+
+      const filtered = sortedJournals.filter(j => {
+        const indexed = isIndexed(j);
+        const matchesStatus =
+          status === "ALL" ||
+          (status === "OA" && indexed) ||
+          (status === "NO_OA" && !indexed);
+
+        const matchesText =
+          !term ||
+          j.name.toLowerCase().includes(term) ||
+          (j.issn && j.issn.toLowerCase().includes(term)) ||
+          (j.issn2 && j.issn2.toLowerCase().includes(term));
+
+        return matchesStatus && matchesText;
+      });
+
+      renderJournals(filtered);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    filterInput.addEventListener("input", applyFilters);
+    statusFilter.addEventListener("change", applyFilters);
+
+    renderJournals(sortedJournals);
+  })();
+</script>
+
+</body>
+</html>

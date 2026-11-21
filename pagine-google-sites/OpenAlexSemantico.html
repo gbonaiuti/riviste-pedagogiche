@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ricerca Semantica AI - Riviste Pedagogiche Italiane</title>
+  <!-- Sostituisci TUO-USERNAME con il tuo nome utente GitHub (es. gbonaiuti) -->
+  <link rel="stylesheet" href="https://gbonaiuti.github.io/riviste-pedagogiche/assets/stile.css" />
+  <script src="https://gbonaiuti.github.io/riviste-pedagogiche/assets/riviste.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div class="semantic-banner">
+    <strong>Ricerca Semantica Vettoriale (OpenAlex):</strong> Descrivi con una frase o un concetto il tema educativo che stai esplorando. Il motore confronta il significato della tua richiesta con i titoli e gli abstract delle riviste pedagogiche italiane indicizzate, individuando anche contributi in <strong>italiano o inglese</strong> che usano terminologie affini.
+  </div>
+
+  <div class="search-panel">
+    <form id="searchForm" onsubmit="return false;">
+      <label class="semantic-label" for="queryInput">Descrivi il tema, il problema educativo o il concetto di ricerca</label>
+      <div class="search-row semantic-row">
+        <textarea
+          id="queryInput"
+          rows="2"
+          placeholder="Es. Metodi per prevenire la dispersione scolastica e favorire il benessere emotivo in classe ..."
+        ></textarea>
+        <button type="button" id="submitBtn" class="btn-teal">Cerca per concetto</button>
+      </div>
+
+      <div class="examples-bar">
+        <span>Esempi:</span>
+        <button type="button" class="example-chip" data-q="Uso critico dell'intelligenza artificiale generativa nella didattica universitaria e nella valutazione">IA generativa nella didattica</button>
+        <button type="button" class="example-chip" data-q="Formazione iniziale e in servizio degli insegnanti di sostegno per l'inclusione scolastica">Formazione insegnanti di sostegno</button>
+        <button type="button" class="example-chip" data-q="Valutazione formativa e autovalutazione come strumenti per migliorare l'apprendimento">Valutazione formativa</button>
+      </div>
+
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="journalSelect">Rivista specifica</label>
+          <select id="journalSelect">
+            <option value="ALL">Tutte le riviste indicizzate</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="langSelect">Lingua articolo</label>
+          <select id="langSelect">
+            <option value="ALL">Tutte le lingue (IT + EN)</option>
+            <option value="it">Solo Italiano (it)</option>
+            <option value="en">Solo Inglese (en)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="yearFrom">Anno da</label>
+          <input type="number" id="yearFrom" placeholder="es. 2018" min="1950" max="2030" />
+        </div>
+
+        <div class="filter-group">
+          <label for="yearTo">Anno a</label>
+          <input type="number" id="yearTo" placeholder="es. 2026" min="1950" max="2030" />
+        </div>
+
+        <div class="filter-group">
+          <label for="oaOnlySelect">Disponibilità</label>
+          <select id="oaOnlySelect">
+            <option value="ALL">Tutti gli articoli</option>
+            <option value="OA">Solo Open Access</option>
+            <option value="ABS">Solo con Abstract</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div id="errorContainer"></div>
+
+  <div class="status-bar" id="statusBar" style="display: none;">
+    <span id="resultsCount"></span>
+    <span id="pageInfo"></span>
+  </div>
+
+  <div id="resultsContainer" class="results-list">
+    <div class="article-card semantic-card" style="text-align:center; color: var(--text-muted); border-left-color: #cbd5e1;">
+      Scrivi una descrizione concettuale nel riquadro sopra (o clicca su uno degli esempi) per avviare la ricerca semantica.
+    </div>
+  </div>
+
+  <div class="pagination" id="paginationControls" style="display: none;">
+    <button id="prevBtn" type="button">&larr; Precedente</button>
+    <span id="pageIndicator"></span>
+    <button id="nextBtn" type="button">Successiva &rarr;</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const CONFIG = window.APP_CONFIG || { contactEmail: "", apiKey: "", perPage: 20 };
+    const JOURNALS = window.PEDAGOGICAL_JOURNALS || [];
+    const PER_PAGE = CONFIG.perPage || 20;
+
+    const SELECT_FIELDS = [
+      "id",
+      "title",
+      "publication_year",
+      "language",
+      "primary_location",
+      "open_access",
+      "authorships",
+      "abstract_inverted_index",
+      "cited_by_count"
+    ].join(",");
+
+    let currentPage = 1;
+    let totalResults = 0;
+    let isFetching = false;
+    let semanticUnavailableToday = false;
+    const responseCache = new Map();
+
+    const submitBtn = document.getElementById("submitBtn");
+    const queryInput = document.getElementById("queryInput");
+    const journalSelect = document.getElementById("journalSelect");
+    const langSelect = document.getElementById("langSelect");
+    const yearFromInput = document.getElementById("yearFrom");
+    const yearToInput = document.getElementById("yearTo");
+    const oaOnlySelect = document.getElementById("oaOnlySelect");
+    const resultsContainer = document.getElementById("resultsContainer");
+    const statusBar = document.getElementById("statusBar");
+    const resultsCount = document.getElementById("resultsCount");
+    const pageInfo = document.getElementById("pageInfo");
+    const paginationControls = document.getElementById("paginationControls");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const pageIndicator = document.getElementById("pageIndicator");
+    const errorContainer = document.getElementById("errorContainer");
+
+    function formatOpenAlexId(rawId) {
+      const clean = rawId.trim();
+      return clean.startsWith("http") ? clean : `https://openalex.org/${clean}`;
+    }
+
+    function initJournalDropdown() {
+      const activeJournals = JOURNALS
+        .filter(j => j.openAlexId && j.openAlexId.trim() !== "")
+        .sort((a, b) => a.name.localeCompare(b.name, "it"));
+
+      activeJournals.forEach(j => {
+        const code = j.openAlexId.trim();
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = j.name;
+        journalSelect.appendChild(opt);
+      });
+    }
+
+    function reconstructAbstract(invertedIndex) {
+      if (!invertedIndex || typeof invertedIndex !== "object") {
+        return null;
+      }
+      const words = [];
+      for (const [word, positions] of Object.entries(invertedIndex)) {
+        for (const pos of positions) {
+          words[pos] = word;
+        }
+      }
+      return words.filter(Boolean).join(" ");
+    }
+
+    function buildFilters() {
+      const filters = [];
+      const selectedValue = journalSelect.value;
+      const lang = langSelect.value;
+      const yearFrom = yearFromInput.value.trim();
+      const yearTo = yearToInput.value.trim();
+      const oaOnly = oaOnlySelect.value;
+
+      if (selectedValue !== "ALL") {
+        filters.push(`primary_location.source.id:${formatOpenAlexId(selectedValue)}`);
+      } else {
+        const allIds = [...new Set(
+          JOURNALS
+            .filter(j => j.openAlexId && j.openAlexId.trim() !== "")
+            .map(j => formatOpenAlexId(j.openAlexId))
+        )].slice(0, 50);
+
+        if (allIds.length === 0) {
+          throw new Error("Nessuna rivista attiva configurata con openAlexId nel file riviste.js.");
+        }
+        filters.push(`primary_location.source.id:${allIds.join("|")}`);
+      }
+
+      if (lang !== "ALL") {
+        filters.push(`language:${lang}`);
+      }
+
+      if (yearFrom && yearTo) {
+        filters.push(`publication_year:${yearFrom}-${yearTo}`);
+      } else if (yearFrom) {
+        filters.push(`publication_year:>${parseInt(yearFrom, 10) - 1}`);
+      } else if (yearTo) {
+        filters.push(`publication_year:<${parseInt(yearTo, 10) + 1}`);
+      }
+
+      if (oaOnly === "OA") {
+        filters.push("is_oa:true");
+      } else if (oaOnly === "ABS") {
+        filters.push("has_abstract:true");
+      }
+
+      return filters;
+    }
+
+    function buildSearchUrl(query, page, useSemantic) {
+      const filters = buildFilters();
+      const url = new URL("https://api.openalex.org/works");
+      url.searchParams.set("filter", filters.join(","));
+      url.searchParams.set("page", page);
+      url.searchParams.set("per-page", PER_PAGE);
+      url.searchParams.set("select", SELECT_FIELDS);
+
+      if (CONFIG.contactEmail) {
+        url.searchParams.set("mailto", CONFIG.contactEmail.trim());
+      }
+
+      if (useSemantic && CONFIG.apiKey && CONFIG.apiKey.trim() !== "" && !semanticUnavailableToday) {
+        url.searchParams.set("api_key", CONFIG.apiKey.trim());
+        url.searchParams.set("search.semantic", query);
+      } else {
+        const terms = query
+          .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+          .split(/\s+/)
+          .filter(w => w.length > 3);
+        const fallbackQuery = terms.length > 1 ? terms.join(" OR ") : query;
+        url.searchParams.set("search", fallbackQuery);
+        url.searchParams.set("sort", "relevance_score:desc");
+      }
+
+      return url.toString();
+    }
+
+    async function fetchSemanticWorks(page = 1) {
+      const query = queryInput.value.trim();
+      if (!query) {
+        errorContainer.innerHTML = `<div class="error-box">Inserisci una frase o un concetto da ricercare prima di avviare la ricerca.</div>`;
+        return;
+      }
+
+      if (isFetching) return;
+      isFetching = true;
+      submitBtn.disabled = true;
+
+      currentPage = page;
+      errorContainer.innerHTML = "";
+      resultsContainer.innerHTML = `<div class="loader">Analisi semantica in corso sulle riviste pedagogiche...</div>`;
+      paginationControls.style.display = "none";
+
+      try {
+        const canUseSemantic = Boolean(CONFIG.apiKey && CONFIG.apiKey.trim() !== "" && !semanticUnavailableToday);
+        let usedMode = canUseSemantic ? "semantic" : "fallback";
+        let targetUrl = buildSearchUrl(query, currentPage, canUseSemantic);
+
+        if (responseCache.has(targetUrl)) {
+          const cached = responseCache.get(targetUrl);
+          totalResults = cached.data.meta.count || 0;
+          renderResults(cached.data.results || [], cached.mode);
+          return;
+        }
+
+        let response = await fetch(targetUrl);
+
+        if (!response.ok && canUseSemantic && (response.status === 429 || response.status === 400 || response.status === 403)) {
+          semanticUnavailableToday = true;
+          usedMode = "fallback";
+          targetUrl = buildSearchUrl(query, currentPage, false);
+          response = await fetch(targetUrl);
+        }
+
+        if (!response.ok) {
+          throw new Error(`Errore HTTP ${response.status} da OpenAlex`);
+        }
+
+        const data = await response.json();
+        responseCache.set(targetUrl, { data, mode: usedMode });
+        totalResults = data.meta.count || 0;
+        renderResults(data.results || [], usedMode);
+      } catch (err) {
+        resultsContainer.innerHTML = "";
+        statusBar.style.display = "none";
+        errorContainer.innerHTML = `<div class="error-box"><strong>Si è verificato un problema:</strong> ${err.message}</div>`;
+      } finally {
+        isFetching = false;
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderResults(works, mode) {
+      if (totalResults === 0 || works.length === 0) {
+        statusBar.style.display = "none";
+        resultsContainer.innerHTML = `
+          <div class="article-card semantic-card" style="text-align:center; color: var(--text-muted); border-left-color: #cbd5e1;">
+            Nessun articolo trovato per questo concetto. Prova a riformulare la frase o ad ampliare l'intervallo di anni.
+          </div>`;
+        return;
+      }
+
+      const totalPages = Math.ceil(totalResults / PER_PAGE);
+      const modeBadge = mode === "semantic"
+        ? `<span class="mode-badge">Affinità semantica AI</span>`
+        : `<span class="mode-badge fallback">Modalità concettuale estesa</span>`;
+
+      statusBar.style.display = "flex";
+      resultsCount.innerHTML = `Trovati <strong>${totalResults.toLocaleString("it-IT")}</strong> articoli ${modeBadge}`;
+      pageInfo.textContent = `Pagina ${currentPage} di ${totalPages.toLocaleString("it-IT")}`;
+
+      resultsContainer.innerHTML = "";
+
+      works.forEach((work, idx) => {
+        const title = work.title || "Titolo non disponibile";
+        const year = work.publication_year || "s.d.";
+        const lang = work.language || "";
+        const journal = work.primary_location?.source?.display_name || "Rivista non specificata";
+        const isOA = work.open_access?.is_oa;
+        const articleUrl = work.primary_location?.landing_page_url || work.doi || work.id;
+        const pdfUrl = work.open_access?.oa_url;
+
+        const authors = (work.authorships || [])
+          .map(a => a.author?.display_name)
+          .filter(Boolean)
+          .join(", ") || "Autori non indicati";
+
+        const abstractText = reconstructAbstract(work.abstract_inverted_index);
+
+        const card = document.createElement("article");
+        card.className = "article-card semantic-card";
+
+        card.innerHTML = `
+          <div class="article-meta-top">
+            <span class="journal-name">${escapeHtml(journal)}</span>
+            <span>&bull;</span>
+            <span><strong>${year}</strong></span>
+            ${lang ? `<span class="badge-lang">${escapeHtml(lang)}</span>` : ""}
+            ${isOA ? `<span class="badge-oa">Open Access</span>` : ""}
+            ${work.cited_by_count > 0 ? `<span>&bull; Citazioni: ${work.cited_by_count}</span>` : ""}
+          </div>
+
+          <h2 class="article-title">
+            <a href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+          </h2>
+
+          <div class="article-authors">${escapeHtml(authors)}</div>
+
+          ${abstractText ? `<p class="article-abstract" id="abs-${idx}">${escapeHtml(abstractText)}</p>` : ""}
+
+          <div class="article-actions">
+            <a class="btn-link" href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener noreferrer">Vai all'articolo &nearr;</a>
+            ${pdfUrl && pdfUrl !== articleUrl ? `<a class="btn-link" href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener noreferrer">Apri PDF &nearr;</a>` : ""}
+            ${abstractText && abstractText.length > 260 ? `<button type="button" class="btn-link" data-abs-id="abs-${idx}">Mostra tutto l'abstract</button>` : ""}
+          </div>
+        `;
+
+        resultsContainer.appendChild(card);
+      });
+
+      if (totalPages > 1) {
+        paginationControls.style.display = "flex";
+        pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages.toLocaleString("it-IT")}`;
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+      }
+    }
+
+    resultsContainer.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-abs-id]");
+      if (!btn) return;
+      const el = document.getElementById(btn.getAttribute("data-abs-id"));
+      if (!el) return;
+      const isExpanded = el.classList.toggle("expanded");
+      btn.textContent = isExpanded ? "Riduci abstract" : "Mostra tutto l'abstract";
+    });
+
+    document.querySelectorAll(".example-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        queryInput.value = chip.getAttribute("data-q");
+        fetchSemanticWorks(1);
+      });
+    });
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    submitBtn.addEventListener("click", () => {
+      fetchSemanticWorks(1);
+    });
+
+    queryInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        fetchSemanticWorks(1);
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        fetchSemanticWorks(currentPage - 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      fetchSemanticWorks(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    initJournalDropdown();
+  })();
+</script>
+
+</body>
+</html>

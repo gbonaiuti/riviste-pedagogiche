@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motore di Ricerca Riviste Pedagogiche Italiane (OpenAlex)</title>
+  <!-- Sostituisci TUO-USERNAME con il tuo nome utente GitHub (es. gbonaiuti) -->
+  <link rel="stylesheet" href="https://gbonaiuti.github.io/riviste-pedagogiche/assets/stile.css" />
+  <script src="https://gbonaiuti.github.io/riviste-pedagogiche/assets/riviste.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div class="info-banner">
+    <strong>Ricerca per Parole Chiave e Metadati (OpenAlex):</strong> Cerca nei titoli e negli abstract delle riviste pedagogiche italiane indicizzate. Puoi usare le <strong>virgolette</strong> per frasi esatte (es. <i>"didattica attiva"</i>), gli operatori booleani <strong>AND</strong>, <strong>OR</strong>, <strong>NOT</strong> e combinare i filtri per autore, rivista o intervallo di anni.
+  </div>
+
+  <div class="search-panel">
+    <form id="searchForm" onsubmit="return false;">
+      <label class="search-label" for="queryInput">Parole chiave o espressione di ricerca</label>
+      <div class="search-row">
+        <input
+          type="text"
+          id="queryInput"
+          placeholder='Es. valutazione formativa, "didattica inclusiva", tecnologie OR media...'
+        />
+        <button type="button" id="submitBtn">Cerca</button>
+      </div>
+
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="authorInput">Autore</label>
+          <input type="text" id="authorInput" placeholder="es. Mario Rossi" />
+        </div>
+
+        <div class="filter-group">
+          <label for="journalSelect">Rivista specifica</label>
+          <select id="journalSelect">
+            <option value="ALL">Tutte le riviste attive</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="yearFrom">Anno da</label>
+          <input type="number" id="yearFrom" placeholder="es. 2015" min="1950" max="2030" />
+        </div>
+
+        <div class="filter-group">
+          <label for="yearTo">Anno a</label>
+          <input type="number" id="yearTo" placeholder="es. 2026" min="1950" max="2030" />
+        </div>
+
+        <div class="filter-group">
+          <label for="sortSelect">Ordina per</label>
+          <select id="sortSelect">
+            <option value="relevance">Rilevanza</option>
+            <option value="publication_date:desc">Più recenti</option>
+            <option value="publication_date:asc">Meno recenti</option>
+            <option value="cited_by_count:desc">Più citati</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div id="errorContainer"></div>
+
+  <div class="status-bar" id="statusBar" style="display: none;">
+    <span id="resultsCount"></span>
+    <span id="pageInfo"></span>
+  </div>
+
+  <div id="resultsContainer" class="results-list">
+    <div class="article-card" style="text-align:center; color: var(--text-muted); border-left-color: #cbd5e1;">
+      Inserisci una parola chiave, il cognome di un autore o seleziona una rivista e clicca su <strong>Cerca</strong>.
+    </div>
+  </div>
+
+  <div class="pagination" id="paginationControls" style="display: none;">
+    <button id="prevBtn" type="button">&larr; Precedente</button>
+    <span id="pageIndicator"></span>
+    <button id="nextBtn" type="button">Successiva &rarr;</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const CONFIG = window.APP_CONFIG || { contactEmail: "", apiKey: "", perPage: 20 };
+    const JOURNALS = window.PEDAGOGICAL_JOURNALS || [];
+    const PER_PAGE = CONFIG.perPage || 20;
+
+    const SELECT_FIELDS = [
+      "id",
+      "title",
+      "publication_year",
+      "publication_date",
+      "primary_location",
+      "open_access",
+      "authorships",
+      "abstract_inverted_index",
+      "cited_by_count"
+    ].join(",");
+
+    let currentPage = 1;
+    let totalResults = 0;
+    let isFetching = false;
+    let apiKeyExhaustedToday = false;
+    const responseCache = new Map();
+
+    const searchForm = document.getElementById("searchForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const queryInput = document.getElementById("queryInput");
+    const authorInput = document.getElementById("authorInput");
+    const journalSelect = document.getElementById("journalSelect");
+    const yearFromInput = document.getElementById("yearFrom");
+    const yearToInput = document.getElementById("yearTo");
+    const sortSelect = document.getElementById("sortSelect");
+    const resultsContainer = document.getElementById("resultsContainer");
+    const statusBar = document.getElementById("statusBar");
+    const resultsCount = document.getElementById("resultsCount");
+    const pageInfo = document.getElementById("pageInfo");
+    const paginationControls = document.getElementById("paginationControls");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const pageIndicator = document.getElementById("pageIndicator");
+    const errorContainer = document.getElementById("errorContainer");
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function formatOpenAlexId(rawId) {
+      const clean = rawId.trim();
+      return clean.startsWith("http") ? clean : `https://openalex.org/${clean}`;
+    }
+
+    function initJournalDropdown() {
+      const activeJournals = JOURNALS
+        .filter(j => j.openAlexId && j.openAlexId.trim() !== "")
+        .sort((a, b) => a.name.localeCompare(b.name, "it"));
+
+      activeJournals.forEach(j => {
+        const code = j.openAlexId.trim();
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = `${j.name} (${code})`;
+        journalSelect.appendChild(opt);
+      });
+    }
+
+    function reconstructAbstract(invertedIndex) {
+      if (!invertedIndex || typeof invertedIndex !== "object") {
+        return null;
+      }
+      const words = [];
+      for (const [word, positions] of Object.entries(invertedIndex)) {
+        for (const pos of positions) {
+          words[pos] = word;
+        }
+      }
+      return words.filter(Boolean).join(" ");
+    }
+
+    function buildBooleanQuery(rawQuery) {
+      const sanitized = rawQuery.replace(/,/g, " ").trim();
+      if (!sanitized) return "";
+
+      if (/(AND|OR|NOT)/.test(sanitized) || sanitized.includes('"')) {
+        return sanitized;
+      }
+
+      return sanitized
+        .split(/\s+/)
+        .filter(Boolean)
+        .join(" AND ");
+    }
+
+    function buildAuthorSearch(rawAuthor) {
+      const sanitized = rawAuthor.replace(/,/g, " ").trim();
+      if (!sanitized) return "";
+      return sanitized
+        .split(/\s+/)
+        .filter(Boolean)
+        .join(" AND ");
+    }
+
+    async function fetchWithRetry(urlString, retries = 2) {
+      if (responseCache.has(urlString)) {
+        return responseCache.get(urlString);
+      }
+
+      let currentUrl = urlString;
+      let triedFallbackToAnonymous = false;
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const response = await fetch(currentUrl);
+
+        if (response.status === 429) {
+          if (!triedFallbackToAnonymous && currentUrl.includes("api_key=")) {
+            const fallbackUrl = new URL(currentUrl);
+            fallbackUrl.searchParams.delete("api_key");
+            currentUrl = fallbackUrl.toString();
+            triedFallbackToAnonymous = true;
+            apiKeyExhaustedToday = true;
+            attempt--;
+            continue;
+          }
+
+          if (attempt < retries) {
+            const retryAfter = response.headers.get("Retry-After");
+            const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 2000 * (attempt + 1);
+            await sleep(waitMs);
+            continue;
+          }
+          throw new Error("Limite temporaneo di richieste OpenAlex raggiunto (Errore 429). Attendi 10-15 secondi e riprova.");
+        }
+
+        if (!response.ok) {
+          throw new Error(`Errore HTTP ${response.status} da OpenAlex`);
+        }
+
+        const data = await response.json();
+        responseCache.set(urlString, data);
+        return data;
+      }
+    }
+
+    async function fetchArticles(page = 1) {
+      if (isFetching) return;
+      isFetching = true;
+      submitBtn.disabled = true;
+
+      currentPage = page;
+      errorContainer.innerHTML = "";
+      resultsContainer.innerHTML = `<div class="loader">Ricerca in corso negli archivi OpenAlex...</div>`;
+      paginationControls.style.display = "none";
+
+      const query = queryInput.value.trim();
+      const author = authorInput.value.trim();
+      const selectedValue = journalSelect.value;
+      const yearFrom = yearFromInput.value.trim();
+      const yearTo = yearToInput.value.trim();
+      const sort = sortSelect.value;
+
+      try {
+        const filters = [];
+
+        if (selectedValue !== "ALL") {
+          filters.push(`primary_location.source.id:${formatOpenAlexId(selectedValue)}`);
+        } else {
+          const allIds = [...new Set(
+            JOURNALS
+              .filter(j => j.openAlexId && j.openAlexId.trim() !== "")
+              .map(j => formatOpenAlexId(j.openAlexId))
+          )].slice(0, 50);
+
+          if (allIds.length === 0) {
+            throw new Error("Nessuna rivista attiva configurata con openAlexId nel file riviste.js.");
+          }
+          filters.push(`primary_location.source.id:${allIds.join("|")}`);
+        }
+
+        if (author) {
+          const authorQuery = buildAuthorSearch(author);
+          if (authorQuery) {
+            filters.push(`raw_author_name.search:${authorQuery}`);
+          }
+        }
+
+        if (yearFrom && yearTo) {
+          filters.push(`publication_year:${yearFrom}-${yearTo}`);
+        } else if (yearFrom) {
+          filters.push(`publication_year:>${parseInt(yearFrom, 10) - 1}`);
+        } else if (yearTo) {
+          filters.push(`publication_year:<${parseInt(yearTo, 10) + 1}`);
+        }
+
+        const url = new URL("https://api.openalex.org/works");
+        url.searchParams.set("filter", filters.join(","));
+        url.searchParams.set("page", currentPage);
+        url.searchParams.set("per-page", PER_PAGE);
+        url.searchParams.set("select", SELECT_FIELDS);
+
+        if (CONFIG.contactEmail) {
+          url.searchParams.set("mailto", CONFIG.contactEmail.trim());
+        }
+
+        if (CONFIG.apiKey && CONFIG.apiKey.trim() !== "" && !apiKeyExhaustedToday) {
+          url.searchParams.set("api_key", CONFIG.apiKey.trim());
+        }
+
+        if (query) {
+          const booleanQuery = buildBooleanQuery(query);
+          if (booleanQuery) {
+            url.searchParams.set("search", booleanQuery);
+          }
+        }
+
+        if (sort !== "relevance") {
+          url.searchParams.set("sort", sort);
+        } else {
+          url.searchParams.set("sort", query ? "relevance_score:desc" : "publication_date:desc");
+        }
+
+        const data = await fetchWithRetry(url.toString());
+        totalResults = data.meta.count || 0;
+        renderResults(data.results || []);
+      } catch (err) {
+        resultsContainer.innerHTML = "";
+        statusBar.style.display = "none";
+        errorContainer.innerHTML = `<div class="error-box"><strong>Si è verificato un problema:</strong> ${err.message}</div>`;
+      } finally {
+        isFetching = false;
+        submitBtn.disabled = false;
+      }
+    }
+
+    function renderResults(works) {
+      if (totalResults === 0 || works.length === 0) {
+        statusBar.style.display = "none";
+        resultsContainer.innerHTML = `
+          <div class="article-card" style="text-align:center; color: var(--text-muted); border-left-color: #cbd5e1;">
+            Nessun articolo trovato con i criteri selezionati. Prova a rimuovere alcuni filtri o a verificare l'ortografia.
+          </div>`;
+        return;
+      }
+
+      const totalPages = Math.ceil(totalResults / PER_PAGE);
+      statusBar.style.display = "flex";
+      resultsCount.innerHTML = `Trovati <strong>${totalResults.toLocaleString("it-IT")}</strong> articoli`;
+      pageInfo.textContent = `Pagina ${currentPage} di ${totalPages.toLocaleString("it-IT")}`;
+
+      resultsContainer.innerHTML = "";
+
+      works.forEach((work, idx) => {
+        const title = work.title || "Titolo non disponibile";
+        const year = work.publication_year || "s.d.";
+        const journal = work.primary_location?.source?.display_name || "Rivista non specificata";
+        const isOA = work.open_access?.is_oa;
+        const articleUrl = work.primary_location?.landing_page_url || work.doi || work.id;
+        const pdfUrl = work.open_access?.oa_url;
+
+        const authors = (work.authorships || [])
+          .map(a => a.author?.display_name)
+          .filter(Boolean)
+          .join(", ") || "Autori non indicati";
+
+        const abstractText = reconstructAbstract(work.abstract_inverted_index);
+
+        const card = document.createElement("article");
+        card.className = "article-card";
+
+        card.innerHTML = `
+          <div class="article-meta-top">
+            <span class="journal-name">${escapeHtml(journal)}</span>
+            <span>&bull;</span>
+            <span><strong>${year}</strong></span>
+            ${isOA ? `<span class="badge-oa">Open Access</span>` : ""}
+            ${work.cited_by_count > 0 ? `<span>&bull; Citazioni: ${work.cited_by_count}</span>` : ""}
+          </div>
+
+          <h2 class="article-title">
+            <a href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>
+          </h2>
+
+          <div class="article-authors">${escapeHtml(authors)}</div>
+
+          ${abstractText ? `<p class="article-abstract" id="abs-${idx}">${escapeHtml(abstractText)}</p>` : ""}
+
+          <div class="article-actions">
+            <a class="btn-link" href="${escapeHtml(articleUrl)}" target="_blank" rel="noopener noreferrer">Vai all'articolo &nearr;</a>
+            ${pdfUrl && pdfUrl !== articleUrl ? `<a class="btn-link" href="${escapeHtml(pdfUrl)}" target="_blank" rel="noopener noreferrer">Apri PDF &nearr;</a>` : ""}
+            ${abstractText && abstractText.length > 260 ? `<button type="button" class="btn-link" data-abs-id="abs-${idx}">Mostra tutto l'abstract</button>` : ""}
+          </div>
+        `;
+
+        resultsContainer.appendChild(card);
+      });
+
+      if (totalPages > 1) {
+        paginationControls.style.display = "flex";
+        pageIndicator.textContent = `Pagina ${currentPage} di ${totalPages.toLocaleString("it-IT")}`;
+        prevBtn.disabled = currentPage <= 1;
+        nextBtn.disabled = currentPage >= totalPages;
+      }
+    }
+
+    resultsContainer.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-abs-id]");
+      if (!btn) return;
+      const el = document.getElementById(btn.getAttribute("data-abs-id"));
+      if (!el) return;
+      const isExpanded = el.classList.toggle("expanded");
+      btn.textContent = isExpanded ? "Riduci abstract" : "Mostra tutto l'abstract";
+    });
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    submitBtn.addEventListener("click", () => {
+      fetchArticles(1);
+    });
+
+    searchForm.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        fetchArticles(1);
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        fetchArticles(currentPage - 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      fetchArticles(currentPage + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    initJournalDropdown();
+  })();
+</script>
+
+</body>
+</html>

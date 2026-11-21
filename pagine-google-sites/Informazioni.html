@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guida, Copertura e Aggiornamento Dati - Riviste Pedagogiche Italiane</title>
+  <!-- Sostituisci TUO-USERNAME con il tuo nome utente GitHub (es. gbonaiuti) -->
+  <link rel="stylesheet" href="https://gbonaiuti.github.io/riviste-pedagogiche/assets/stile.css" />
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Intestazione -->
+  <section class="intro-box">
+    <h2>Guida al portale, copertura dei dati e aggiornamento riviste</h2>
+    <p>
+      Informazioni sul funzionamento dei motori di ricerca del portale, indicazioni pratiche per gli autori e suggerimenti tecnici per i direttori e le redazioni delle riviste scientifiche censite.
+    </p>
+  </section>
+
+  <!-- Navigazione rapida -->
+  <nav class="quick-nav" aria-label="Indice della pagina">
+    <a href="#panoramica">1. Panoramica</a>
+    <a href="#autori">2. Per gli autori</a>
+    <a href="#editori">3. Per direttori e redazioni</a>
+    <a href="#contatti">4. Contatti e aggiornamenti</a>
+  </nav>
+
+  <!-- SEZIONE 1: Panoramica -->
+  <section class="section-card" id="panoramica">
+    <div class="section-header">
+      <span class="section-badge badge-blue">Panoramica</span>
+      <h3>1. Come funziona questo portale</h3>
+    </div>
+    <p>
+      Le riviste pedagogiche italiane presentano livelli molto diversi di digitalizzazione e apertura dei metadati. Per garantire la massima copertura possibile, questo portale non utilizza un proprio archivio proprietario, ma convoglia in tempo reale le interrogazioni degli utenti su due infrastrutture esterne complementari — <a href="https://openalex.org/" target="_blank" rel="noopener noreferrer">OpenAlex</a> e <a href="https://programmablesearchengine.google.com/" target="_blank" rel="noopener noreferrer">Google Programmable Search</a> — filtrandole esclusivamente sulle testate scientifiche italiane censite e raccogliendone le risposte.
+    </p>
+    <p>
+      In particolare, il catalogo bibliografico aperto <strong>OpenAlex</strong> costruisce il proprio indice importando e integrando automaticamente i metadati provenienti da sorgenti aperte come <strong>Crossref</strong>, <strong>DataCite</strong>, <strong>PubMed</strong>, <strong>ORCID</strong>, <strong>ROR</strong> e da archivi o piattaforme editoriali che espongono i propri dati tramite il protocollo <strong>OAI-PMH</strong>. Di conseguenza, la completezza e la tempestività dei risultati dipendono dalla qualità e dalla disponibilità dei metadati resi accessibili da tali fonti.
+    </p>
+    <p>
+      Sebbene OpenAlex rappresenti una delle più ampie infrastrutture aperte per la documentazione della ricerca scientifica, la copertura delle riviste e dei singoli articoli non può essere considerata esaustiva: la presenza di una testata nel catalogo non garantisce che tutti i fascicoli o i singoli contributi siano già stati acquisiti. Possono infatti verificarsi ritardi di sincronizzazione, omissioni o discrepanze rispetto a quanto effettivamente pubblicato dagli editori.
+    </p>
+    <p>
+      L'assenza di un articolo nei risultati — anche qualora sia dotato di codice <strong>DOI</strong> — non significa dunque che il lavoro non sia stato regolarmente pubblicato. Non è infatti sufficiente che una rivista attribuisca il DOI tramite agenzie come <strong>mEDRA</strong> (<em>Multilingual European DOI Registration Agency</em>) perché i metadati bibliografici circolino automaticamente nei circuiti aperti interrogati da OpenAlex: se i metadati non vengono depositati anche su Crossref o esposti tramite OAI-PMH, l'articolo può restare invisibile a OpenAlex (e quindi ai motori bibliografici di questo portale) pur avendo un DOI attivo e funzionante.
+    </p>
+    <p>
+      Per verifiche puntuali o per consultare i fascicoli non ancora acquisiti dai circuiti aperti, si raccomanda di utilizzare la <strong>Ricerca Web Google</strong> del portale oppure di accedere direttamente al sito ufficiale della rivista.
+    </p>
+  </section>
+
+  <!-- SEZIONE 2: Indicazioni per gli autori -->
+  <section class="section-card" id="autori">
+    <div class="section-header">
+      <span class="section-badge badge-teal">Per gli Autori</span>
+      <h3>2. Perché un articolo pubblicato potrebbe non comparire nei risultati</h3>
+    </div>
+    <p>
+      Poiché il portale interroga direttamente <strong>OpenAlex</strong> senza possibilità di inserimento manuale di singoli contributi, qualora un tuo articolo non compaia nei motori bibliografici è possibile individuare l'origine del problema effettuando alcune verifiche puntuali:
+    </p>
+    <ul class="clean-list">
+      <li><strong>Verifica lo stato della rivista nell'Elenco Riviste:</strong> controlla se la testata è contrassegnata come <em>Indicizzata</em> (presente in OpenAlex) oppure <em>Non indicizzata</em> (consultabile solo tramite la Ricerca Google Search o sul sito dell'editore).</li>
+      <li><strong>Controlla varianti del nome autore o cerca per titolo:</strong> prova a cercare il lavoro per titolo o per solo cognome, poiché nei metadati depositati dagli editori il nome proprio può talvolta risultare puntato, incompleto o trascritto con varianti.</li>
+      <li><strong>Verifica se il lavoro è presente direttamente su OpenAlex:</strong> se la rivista è indicizzata, controlla sul portale ufficiale <a href="https://openalex.org/" target="_blank" rel="noopener noreferrer">OpenAlex</a> se l'articolo è stato comunque acquisito ma risulta non collegato alla scheda della rivista (ad esempio per un'incongruenza nel codice ISSN).</li>
+      <li><strong>Verifica l'esistenza e la risolvibilità del DOI:</strong> controlla che all'articolo sia stato assegnato un codice DOI e che questo sia effettivamente attivo e risolvibile sul registro internazionale <a href="https://www.doi.org/" target="_blank" rel="noopener noreferrer">DOI.org</a>.</li>
+      <li><strong>Verifica la presenza su Crossref e altri circuiti aperti:</strong> controlla se i metadati dell'articolo risultano depositati su <a href="https://search.crossref.org/" target="_blank" rel="noopener noreferrer">Crossref Search</a> o su altri sistemi di indicizzazione aperti; se il DOI è stato registrato esclusivamente tramite mEDRA senza esposizione OAI-PMH, i metadati non confluiscono automaticamente in OpenAlex.</li>
+    </ul>
+
+    <div class="sub-heading">Come procedere in base all'esito delle verifiche:</div>
+    <ul class="clean-list">
+      <li><strong>Attendere l'aggiornamento per i fascicoli appena usciti:</strong> se l'articolo è relativamente recente, per le riviste acquisite tramite OAI-PMH o citazioni l'indicizzazione dei nuovi numeri su OpenAlex può richiedere alcune settimane o mesi dalla pubblicazione online.</li>
+      <li><strong>Segnalare il problema alla redazione della rivista:</strong> qualora l'articolo risulti pubblicato da tempo ma assente dai circuiti aperti o privo di metadati risolvibili, si consiglia di segnalare l'inadeguata circolazione dei metadati direttamente alla redazione della rivista, invitandola a consultare le indicazioni tecniche riportate nella sezione successiva.</li>
+    </ul>
+  </section>
+
+  <!-- SEZIONE 3: Indicazioni per direttori e redazioni -->
+  <section class="section-card" id="editori">
+    <div class="section-header">
+      <span class="section-badge badge-amber">Per Direttori e Redazioni</span>
+      <h3>3. Indicazioni per direttori e redazioni delle riviste</h3>
+    </div>
+    <p>
+      Qualora una rivista risulti presente nel sistema ma con una copertura incompleta degli articoli pubblicati, si suggerisce di verificare alcuni aspetti tecnici relativi alla diffusione dei metadati bibliografici.
+    </p>
+    <p>
+      In particolare, è opportuno accertare che:
+    </p>
+    <ul class="clean-list">
+      <li>a ogni articolo siano associati metadati completi e coerenti (titolo, autori, abstract, parole chiave, DOI, anno, fascicolo, paginazione);</li>
+      <li>i DOI assegnati agli articoli siano correttamente registrati e risolvibili;</li>
+      <li>il sistema editoriale della rivista (ad esempio OJS - <em>Open Journal Systems</em>) esponga correttamente i metadati attraverso il protocollo OAI-PMH;</li>
+      <li>gli endpoint OAI-PMH siano pubblicamente accessibili e restituiscano l'intero storico delle pubblicazioni;</li>
+      <li>eventuali servizi di registrazione DOI, repository istituzionali o aggregatori disciplinari ricevano e aggiornino regolarmente i metadati della rivista;</li>
+      <li>i metadati degli articoli siano disponibili in formati interoperabili e conformi agli standard bibliografici comunemente utilizzati dalle infrastrutture di ricerca.</li>
+    </ul>
+    <p>
+      Poiché OpenAlex aggrega informazioni provenienti da molteplici sorgenti esterne, la qualità e la completezza dell'indicizzazione dipendono anche dalla qualità dei metadati resi disponibili dalla rivista e dai sistemi attraverso cui tali metadati vengono distribuiti.
+    </p>
+  </section>
+
+  <!-- SEZIONE 4: Contatti protetti da bot -->
+  <section class="contact-box" id="contatti">
+    <strong>4. Contatti per aggiornamenti e segnalazioni</strong>
+    <p style="margin-top: 4px;">
+      I direttori, i comitati editoriali e le redazioni interessate ad aggiornare i riferimenti della propria rivista nel repertorio (indirizzo web ufficiale, codici ISSN o stato di indicizzazione in OpenAlex) possono richiedere l'aggiornamento scrivendo al curatore del portale.
+    </p>
+    <button type="button" class="reveal-contact-btn" id="revealContactBtn" aria-expanded="false">
+      Mostra indirizzo email per le segnalazioni
+    </button>
+    <div class="revealed-contact" id="revealedContactBox"></div>
+  </section>
+
+</div>
+
+<script>
+  (function () {
+    const btn = document.getElementById("revealContactBtn");
+    const box = document.getElementById("revealedContactBox");
+
+    btn.addEventListener("click", function () {
+      const isVisible = box.classList.toggle("visible");
+      btn.setAttribute("aria-expanded", String(isVisible));
+      btn.textContent = isVisible
+        ? "Nascondi indirizzo email"
+        : "Mostra indirizzo email per le segnalazioni";
+
+      if (isVisible && !box.dataset.loaded) {
+        const u = ["giovanni", "bonaiuti"].join(".");
+        const d = ["unica", "it"].join(".");
+        const addr = u + String.fromCharCode(64) + d;
+        const subject = encodeURIComponent("Segnalazione aggiornamento dati - Portale Riviste Pedagogiche");
+
+        box.innerHTML =
+          `Per comunicare variazioni relative al sito web, ai codici ISSN o all'indicizzazione OpenAlex della rivista, scrivere a: ` +
+          `<a href="mailto:${addr}?subject=${subject}">${addr}</a><br />` +
+          `<span style="font-size: 0.8rem; color: #475569;">Si prega di indicare nell'oggetto il nome completo della rivista e il codice ISSN.</span>`;
+        box.dataset.loaded = "true";
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
