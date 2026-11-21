@@ -8,6 +8,7 @@ Architettura centralizzata per il portale [rivistepedagogiche.it](https://www.ri
 riviste-pedagogiche/
 ├── assets/
 │   ├── riviste.js          # Repertorio unico delle riviste e configurazione API
+│   └── BancheDati.js       # Elenco delle banche dati internazionali usato dal file BancheDati.html
 │   └── stile.css           # Foglio di stile unico condiviso da tutte le pagine
 ├── pagine-google-sites/
 │   ├── HomePage.html
@@ -15,6 +16,7 @@ riviste-pedagogiche/
 │   ├── OpenAlexParole.html
 │   ├── OpenAlexSemantico.html
 │   ├── GoogleSearch.html
+│   ├── BancheDati.html
 │   └── Informazioni.html
 └── README.md
 ```
